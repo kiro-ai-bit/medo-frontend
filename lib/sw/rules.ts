@@ -16,7 +16,3 @@ export function isCacheablePhoto(url: URL, method: string): boolean {
   return method === "GET" && isPhotoRequest(url);
 }
 
-/** NetworkOnly for every API call — Dexie is the sole offline read store. */
-export function shouldBypassCache(url: URL): boolean {
-  return isApiRequest(url);
-}

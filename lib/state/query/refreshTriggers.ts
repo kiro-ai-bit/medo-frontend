@@ -12,7 +12,9 @@ export function registerRefreshTriggers(): void {
 
   useConnectivityStore.subscribe((state, prev) => {
     if (prev.status === "degraded" && state.status === "online") {
-      void replayQueue().then(() => queryClient.invalidateQueries());
+      void replayQueue()
+        .catch(() => {})
+        .then(() => queryClient.invalidateQueries());
     }
   });
 }

@@ -48,6 +48,9 @@ export async function enqueueWrite(input: EnqueueInput): Promise<QueueEntry> {
       .toArray();
     if (stale.length > 0) {
       await medoDb.writeQueue.bulkDelete(stale.map((e) => e.entryId!));
+      const ageEvicted =
+        ((await metaStore.get<number>(EVICTED_KEY)) ?? 0) + stale.length;
+      await metaStore.set(EVICTED_KEY, ageEvicted);
     }
     const count = await medoDb.writeQueue.count();
     if (count > MAX_QUEUE_ENTRIES) {

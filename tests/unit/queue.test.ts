@@ -3,10 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { medoDb } from "@lib/offline/db/medoDb";
 import { metaStore } from "@lib/offline/db/caches";
 import {
+  MAX_QUEUE_AGE_DAYS,
   MAX_QUEUE_ENTRIES,
   enqueueWrite,
   pendingCount,
   replayQueue,
+  type EnqueueInput,
   type ReplayHandlers,
 } from "@lib/offline/queue/queue";
 import { useConnectivityStore } from "@lib/state/client/connectivityStore";
@@ -25,14 +27,17 @@ function okHandlers(calls: string[]): ReplayHandlers {
   };
 }
 
-async function seed(doseId: string, over: Record<string, unknown> = {}) {
+async function seed(
+  doseId: string,
+  over: Partial<EnqueueInput> = {},
+) {
   return enqueueWrite({
     type: "outcome",
     patientId: PID,
     doseId,
     payload: { outcome: "taken-on-time" },
     ...over,
-  } as never);
+  });
 }
 
 afterEach(async () => {
@@ -186,7 +191,7 @@ describe("enqueueWrite cap + age eviction (LD-FE-09)", () => {
   it("evicts entries older than MAX_QUEUE_AGE_DAYS on enqueue", async () => {
     const old = await seed("old");
     await medoDb.writeQueue.update(old.entryId!, {
-      enqueuedAt: new Date(Date.now() - 8 * 86_400_000).toISOString(),
+      enqueuedAt: new Date(Date.now() - (MAX_QUEUE_AGE_DAYS + 1) * 86_400_000).toISOString(),
     });
     await seed("new");
     const ids = (await medoDb.writeQueue.toArray()).map((r) => r.doseId);

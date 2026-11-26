@@ -1,7 +1,7 @@
 import { CacheFirst, NetworkOnly, Serwist } from "serwist";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { ExpirationPlugin } from "@serwist/expiration";
-import { isCacheablePhoto, shouldBypassCache } from "@lib/sw/rules";
+import { isApiRequest, isCacheablePhoto } from "@lib/sw/rules";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -36,7 +36,7 @@ const serwist = new Serwist({
     },
     {
       // API: never cached — NetworkOnly (Dexie is the offline store).
-      matcher: ({ url }) => shouldBypassCache(url),
+      matcher: ({ url }) => isApiRequest(url),
       handler: new NetworkOnly(),
     },
   ],
