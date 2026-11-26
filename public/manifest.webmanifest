@@ -1,0 +1,9 @@
+{
+  "name": "Medo",
+  "short_name": "Medo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#18181b",
+  "icons": []
+}

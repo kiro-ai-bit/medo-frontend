@@ -1,0 +1,20 @@
+export const queryKeys = {
+  me: () => ["me"] as const,
+  doses: (patientId: string, from: string, to: string, outcome?: string) =>
+    ["doses", patientId, from, to, outcome ?? null] as const,
+  dose: (id: string) => ["dose", id] as const,
+  schedules: (patientId: string) => ["schedules", patientId] as const,
+  schedule: (id: string) => ["schedule", id] as const,
+  medicines: (patientId: string) => ["medicines", patientId] as const,
+  medicine: (id: string) => ["medicine", id] as const,
+  catalog: (q: string, page?: number) => ["catalog", q, page ?? 1] as const,
+  catalogEntry: (id: string) => ["catalog", id] as const,
+  invites: () => ["invites"] as const,
+  invite: (token: string) => ["invite", token] as const,
+  links: () => ["links"] as const,
+  feed: (cursor?: string) => ["feed", cursor ?? "first"] as const,
+  feedUnread: () => ["feed", "unread"] as const,
+  prefs: () => ["prefs"] as const,
+  vapid: () => ["vapid"] as const,
+  gamification: (patientId: string) => ["gamification", patientId] as const,
+} as const;
