@@ -186,6 +186,7 @@ export function NewMedicineScreen() {
     prescribingDoctor: "",
     dosage: "",
     dosesRemaining: "",
+    refillThreshold: "6",
     price: "",
     pharmacyName: "",
   });
@@ -270,6 +271,7 @@ export function NewMedicineScreen() {
                   prescribingDoctor: f.prescribingDoctor,
                   dosage: f.dosage,
                   dosesRemaining: Number(f.dosesRemaining),
+                  refillThreshold: Number(f.refillThreshold),
                   price: Number(f.price),
                   pharmacyName: f.pharmacyName,
                 },
@@ -283,6 +285,7 @@ export function NewMedicineScreen() {
                 ["prescribingDoctor", "Prescribing doctor"],
                 ["dosage", "Dosage"],
                 ["dosesRemaining", "Doses remaining"],
+                ["refillThreshold", "Refill alert at (doses left)"],
                 ["price", "Price"],
                 ["pharmacyName", "Pharmacy"],
               ] as const
@@ -293,9 +296,17 @@ export function NewMedicineScreen() {
                   id={k}
                   required
                   type={
-                    k === "price" || k === "dosesRemaining" ? "number" : "text"
+                    k === "price" ||
+                    k === "dosesRemaining" ||
+                    k === "refillThreshold"
+                      ? "number"
+                      : "text"
                   }
-                  min={k === "dosesRemaining" ? 0 : undefined}
+                  min={
+                    k === "dosesRemaining" || k === "refillThreshold"
+                      ? 0
+                      : undefined
+                  }
                   step={k === "price" ? "0.01" : undefined}
                   value={f[k]}
                   onChange={(e) => setF({ ...f, [k]: e.target.value })}

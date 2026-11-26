@@ -41,6 +41,7 @@ export function MedicineDetailScreen() {
     prescribingDoctor: "",
     dosage: "",
     dosesRemaining: "",
+    refillThreshold: "",
     price: "",
     pharmacyName: "",
   });
@@ -79,6 +80,7 @@ export function MedicineDetailScreen() {
       prescribingDoctor: m.prescribingDoctor,
       dosage: m.dosage,
       dosesRemaining: String(m.dosesRemaining),
+      refillThreshold: String(m.refillThreshold),
       price: String(m.price),
       pharmacyName: m.pharmacyName,
     });
@@ -94,6 +96,7 @@ export function MedicineDetailScreen() {
           prescribingDoctor: edit.prescribingDoctor,
           dosage: edit.dosage,
           dosesRemaining: Number(edit.dosesRemaining),
+          refillThreshold: Number(edit.refillThreshold),
           price: Number(edit.price),
           pharmacyName: edit.pharmacyName,
         },
@@ -193,6 +196,10 @@ export function MedicineDetailScreen() {
               <dd>{m.dosesRemaining}</dd>
             </div>
             <div>
+              <dt className="text-zinc-500">Refill alert at</dt>
+              <dd>{m.refillThreshold} doses</dd>
+            </div>
+            <div>
               <dt className="text-zinc-500">Price</dt>
               <dd>{m.price}</dd>
             </div>
@@ -219,6 +226,7 @@ export function MedicineDetailScreen() {
                 ["prescribingDoctor", "Prescribing doctor"],
                 ["dosage", "Dosage"],
                 ["dosesRemaining", "Doses remaining"],
+                ["refillThreshold", "Refill alert at (doses left)"],
                 ["price", "Price"],
                 ["pharmacyName", "Pharmacy"],
               ] as const

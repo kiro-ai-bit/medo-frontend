@@ -59,6 +59,7 @@ export function MedicinesScreen() {
           prescribingDoctor: "",
           dosage: r.dosage,
           dosesRemaining: r.dosesRemaining ?? 0,
+          refillThreshold: 6,
           price: 0,
           pharmacyName: "",
           createdAt: r.fetchedAt,

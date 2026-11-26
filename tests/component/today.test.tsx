@@ -50,6 +50,7 @@ function medDto() {
     prescribingDoctor: "Dr X",
     dosage: "500mg",
     dosesRemaining: 10,
+    refillThreshold: 6,
     price: 100,
     pharmacyName: "Pharm",
     createdAt: "2026-11-26T00:00:00.000Z",
