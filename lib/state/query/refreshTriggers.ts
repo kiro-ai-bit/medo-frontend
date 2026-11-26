@@ -1,6 +1,7 @@
 import { queryClient } from "./queryClient";
 import { useConnectivityStore } from "@lib/state/client/connectivityStore";
 import { replayQueue } from "@lib/offline/queue/queue";
+import { notifyServiceWorker } from "@lib/sw/bridge";
 
 let registered = false;
 let bootInvalidated = false;
@@ -15,6 +16,8 @@ export function registerRefreshTriggers(): void {
       void replayQueue()
         .catch(() => {})
         .then(() => queryClient.invalidateQueries());
+      // LD-FE-12: connectivity-restore → SW reminder recompute.
+      notifyServiceWorker("medo:reschedule");
     }
   });
 }
@@ -23,6 +26,8 @@ export function invalidateOnBoot(): void {
   if (bootInvalidated) return;
   bootInvalidated = true;
   void queryClient.invalidateQueries();
+  // LD-FE-12: app-open → SW reminder recompute.
+  notifyServiceWorker("medo:reschedule");
 }
 
 export function resetRefreshTriggersForTests(): void {

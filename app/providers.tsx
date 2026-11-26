@@ -15,6 +15,8 @@ import { medoDb } from "@lib/offline/db/medoDb";
 import { usePatientContextStore } from "@lib/state/client/patientContextStore";
 import { useConnectivityStore } from "@lib/state/client/connectivityStore";
 import { SwRegister } from "@components/SwRegister";
+import { onServiceWorkerMessage, notifyServiceWorker } from "@lib/sw/bridge";
+import { replayQueue } from "@lib/offline/queue/queue";
 
 registerPurgeStep(async () => {
   await medoDb.delete();
@@ -32,9 +34,28 @@ function BootEffects() {
   useEffect(() => {
     registerRefreshTriggers();
   }, []);
+  // SW notification actions enqueue writes — replay + refresh on signal.
+  useEffect(
+    () =>
+      onServiceWorkerMessage((data) => {
+        if (data.type !== "medo:queue-changed") return;
+        void replayQueue()
+          .catch(() => {})
+          .then(() => queryClient.invalidateQueries());
+      }),
+    [],
+  );
   useEffect(() => {
     if (status === "authenticated") invalidateOnBoot();
   }, [status]);
+  // LD-FE-12: periodic recompute while the app is open (no periodic-sync v1).
+  useEffect(() => {
+    const t = setInterval(
+      () => notifyServiceWorker("medo:reschedule"),
+      15 * 60_000,
+    );
+    return () => clearInterval(t);
+  }, []);
   return null;
 }
 

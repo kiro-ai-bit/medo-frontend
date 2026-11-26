@@ -144,7 +144,9 @@ export function useLogout() {
       } catch {
         // best-effort — purge always runs (FR-FE-010)
       }
-      // Push subscription DELETE lands with the push module (ticket 28).
+      // Push subscription DELETE — best-effort before purge (FR-FE-010/§8.12).
+      const { removeSubscription } = await import("@lib/sw/push/pushLifecycle");
+      await removeSubscription().catch(() => undefined);
       await purgeClientState("logout");
     },
   };

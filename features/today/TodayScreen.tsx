@@ -19,6 +19,11 @@ import {
   usePatientContext,
 } from "@features/patient-context";
 import {
+  NotificationBell,
+  PushEnableCta,
+  useReminderMetaSync,
+} from "@features/notifications";
+import {
   useMarkDose,
   useSnoozeDose,
   useTodayFanout,
@@ -146,6 +151,7 @@ function DoseCard({
 
 export function TodayScreen() {
   useLinkEndWatch();
+  useReminderMetaSync();
   const ctx = usePatientContext();
   const connectivity = useConnectivity();
   const params = useSearchParams();
@@ -229,14 +235,21 @@ export function TodayScreen() {
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Today</h1>
-        {gamification.data ? (
-          <span className="text-sm text-zinc-600" data-testid="harmony-points">
-            {gamification.data.harmonyPoints} pts ·{" "}
-            {gamification.data.themeState}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          {gamification.data ? (
+            <span
+              className="text-sm text-zinc-600"
+              data-testid="harmony-points"
+            >
+              {gamification.data.harmonyPoints} pts ·{" "}
+              {gamification.data.themeState}
+            </span>
+          ) : null}
+        </div>
       </header>
       <LinkEndedBanner />
+      {doses.isSuccess || cached ? <PushEnableCta /> : null}
       <SectionState
         status={status}
         emptyMessage="No doses scheduled."

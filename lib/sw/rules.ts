@@ -15,4 +15,3 @@ export function isPhotoRequest(url: URL): boolean {
 export function isCacheablePhoto(url: URL, method: string): boolean {
   return method === "GET" && isPhotoRequest(url);
 }
-

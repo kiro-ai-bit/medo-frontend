@@ -13,6 +13,7 @@ export const queryKeys = {
   invite: (token: string) => ["invite", token] as const,
   links: () => ["links"] as const,
   feed: (cursor?: string) => ["feed", cursor ?? "first"] as const,
+  feedList: () => ["feed", "list"] as const,
   feedUnread: () => ["feed", "unread"] as const,
   prefs: () => ["prefs"] as const,
   vapid: () => ["vapid"] as const,

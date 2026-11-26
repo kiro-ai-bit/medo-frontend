@@ -2,6 +2,9 @@ import { CacheFirst, NavigationRoute, NetworkOnly, Serwist } from "serwist";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { ExpirationPlugin } from "@serwist/expiration";
 import { isApiRequest, isCacheablePhoto } from "@lib/sw/rules";
+import { rescheduleAll } from "@lib/sw/notifications/scheduler";
+import { handleNotificationAction } from "@lib/sw/notifications/actions";
+import { onNotificationClick, onPush } from "@lib/sw/push/handlers";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -55,4 +58,40 @@ serwist.registerRoute(
 );
 
 serwist.addEventListeners();
+
+// LD-FE-12/13: push display, notification actions + deep-link, reschedule.
+// Serwist's WorkerGlobalScope type lacks the push/notification event maps.
+const swEvents = self as unknown as {
+  addEventListener(type: string, listener: (event: unknown) => void): void;
+};
+
+swEvents.addEventListener("push", (event) => {
+  onPush(event as Parameters<typeof onPush>[0]);
+});
+
+swEvents.addEventListener("notificationclick", (event) => {
+  const e = event as Parameters<typeof onNotificationClick>[0];
+  onNotificationClick(e, (action, data) =>
+    handleNotificationAction(
+      action,
+      data as { doseId?: string; actionOutcome?: string },
+    ),
+  );
+});
+
+swEvents.addEventListener("message", (event) => {
+  const e = event as {
+    data?: { type?: string };
+    waitUntil(p: Promise<unknown>): void;
+  };
+  if (e.data?.type === "medo:reschedule") {
+    e.waitUntil(rescheduleAll());
+  }
+});
+
+swEvents.addEventListener("activate", (event) => {
+  const e = event as { waitUntil(p: Promise<unknown>): void };
+  e.waitUntil(rescheduleAll());
+});
+
 export default serwist;

@@ -13,6 +13,7 @@ import {
 import { metaStore } from "@lib/offline/db/caches";
 import type { CachedDose } from "@lib/offline/db/medoDb";
 import { DateTime } from "luxon";
+import { notifyServiceWorker } from "@lib/sw/bridge";
 
 function toCachedDose(d: DoseSummaryDto | DoseDetailDto): CachedDose {
   return {
@@ -87,9 +88,12 @@ export async function syncDoseSlice(input: {
   ]);
   await evictDosesOutsideWindow(patientId, from, to);
   await metaStore.set("lastFullSyncAt", new Date().toISOString());
+  // LD-FE-12: Dexie data change → SW reminder recompute.
+  notifyServiceWorker("medo:reschedule");
 }
 
 /** Single-row upsert after a successful mark/snooze (keeps Dexie fresh pre-refetch). */
 export async function cacheDose(dose: DoseDetailDto): Promise<void> {
   await doseCache.upsertDoses([toCachedDose(dose)]);
+  notifyServiceWorker("medo:reschedule");
 }
