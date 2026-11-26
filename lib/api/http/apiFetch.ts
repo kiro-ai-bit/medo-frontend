@@ -18,9 +18,15 @@ export interface ApiRequest {
 }
 
 export type UnauthorizedHandler = () => Promise<boolean>;
+export type ForbiddenHandler = () => Promise<void> | void;
 
 let unauthorizedHandler: UnauthorizedHandler | null = null;
 let unauthorizedInFlight: Promise<boolean> | null = null;
+let forbiddenHandler: ForbiddenHandler | null = null;
+
+export function setForbiddenHandler(handler: ForbiddenHandler | null): void {
+  forbiddenHandler = handler;
+}
 
 export function setUnauthorizedHandler(
   handler: UnauthorizedHandler | null,
@@ -86,6 +92,9 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 403 && !req.isAuthRoute && forbiddenHandler) {
+      await forbiddenHandler();
+    }
     throw normalizeApiError(
       response.status,
       await safeJson(response),

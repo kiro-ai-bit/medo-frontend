@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { setUnauthorizedHandler } from "@lib/api/http/apiFetch";
 import { identityClient } from "@lib/api/identity";
 import { useSessionStore } from "@lib/state/client/sessionStore";
+import { medoDb } from "@lib/offline/db/medoDb";
 import { bootSession, handleUnauthorized } from "./session";
 
 /**
@@ -17,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setUnauthorizedHandler(handleUnauthorized);
+    void medoDb.open().catch(() => undefined);
     void bootSession();
     return () => setUnauthorizedHandler(null);
   }, []);
