@@ -82,8 +82,13 @@ export function ScheduleDetailScreen() {
           variant="destructive"
           disabled={del.isPending}
           onClick={async () => {
-            await del.mutateAsync(id);
-            router.push("/medicines");
+            setError(null);
+            try {
+              await del.mutateAsync(id);
+              router.push("/medicines");
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Delete failed");
+            }
           }}
         >
           Delete

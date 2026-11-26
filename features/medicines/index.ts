@@ -10,4 +10,7 @@ export {
   useDeleteMedicine,
   useCatalogSearch,
   useCatalogEntry,
+  useCreateCatalogEntry,
+  usePatchCatalogEntry,
+  useUploadCatalogPhoto,
 } from "./hooks";

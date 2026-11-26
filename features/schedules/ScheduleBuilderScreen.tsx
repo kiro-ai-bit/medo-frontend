@@ -7,7 +7,7 @@ import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
 import { usePatientContext } from "@features/patient-context";
-import { useMedicines } from "@features/medicines/hooks";
+import { useMedicines } from "@features/medicines";
 import { useCreateSchedule } from "./hooks";
 import {
   buildRecurrence,
@@ -35,9 +35,11 @@ export function ScheduleBuilderScreen() {
   const [kind, setKind] = useState<RecurrenceKind>("weekly");
   const [dates, setDates] = useState("");
   const [interval, setInterval_] = useState("1");
-  const [byDay, setByDay] = useState<string[]>(["MO"]);
+  const [byDay, setByDay] = useState<string[]>([]);
   const [doseTimes, setDoseTimes] = useState("08:00");
-  const [startDate, setStartDate] = useState("");
+  const [startDate, setStartDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [endDate, setEndDate] = useState("");
   const [tz, setTz] = useState(browserTimezone());
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +53,8 @@ export function ScheduleBuilderScreen() {
     interval: Number(interval) || 1,
     byDay,
   };
+  const previewRecurrence =
+    kind === "once" ? null : buildRecurrence(recurrenceInput);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -234,8 +238,8 @@ export function ScheduleBuilderScreen() {
             data-testid="rrule-preview"
           >
             {describeRecurrence(recurrenceInput)}
-            {kind !== "once"
-              ? ` — ${buildRecurrence(recurrenceInput).kind === "rrule" ? (buildRecurrence(recurrenceInput) as { rrule: string }).rrule : ""}`
+            {previewRecurrence?.kind === "rrule"
+              ? ` — ${previewRecurrence.rrule}`
               : ""}
           </p>
           {error ? (
