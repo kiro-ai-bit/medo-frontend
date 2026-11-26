@@ -1,12 +1,18 @@
 import {
+  CreateScheduleRequestSchema,
+  DeleteScheduleResponseSchema,
   DoseDetailDtoSchema,
   MarkDoseOutcomeRequestSchema,
   PatientDosesResponseSchema,
+  ScheduleDetailDtoSchema,
   ScheduleListResponseSchema,
+  SchedulePatchRequestSchema,
+  type CreateScheduleRequest,
   type DoseDetailDto,
   type DoseSummaryDto,
   type MarkDoseOutcomeRequest,
-  type ScheduleSummaryDto,
+  type ScheduleDetailDto,
+  type SchedulePatchRequest,
 } from "@kiro-ai-bit/contracts";
 import { apiFetch } from "../http/apiFetch";
 
@@ -54,12 +60,54 @@ export const scheduleDoseClient = {
     );
   },
 
-  async listSchedules(patientId: string): Promise<ScheduleSummaryDto[]> {
+  async listSchedules(patientId: string) {
     const res = await apiFetch(
       { method: "GET", path: `/v1/patients/${patientId}/schedules` },
       ScheduleListResponseSchema,
     );
     return res.schedules;
+  },
+
+  async createSchedule(
+    patientId: string,
+    input: CreateScheduleRequest,
+  ): Promise<ScheduleDetailDto> {
+    return apiFetch(
+      {
+        method: "POST",
+        path: `/v1/patients/${patientId}/schedules`,
+        body: CreateScheduleRequestSchema.parse(input),
+      },
+      ScheduleDetailDtoSchema,
+    );
+  },
+
+  async getSchedule(id: string): Promise<ScheduleDetailDto> {
+    return apiFetch(
+      { method: "GET", path: `/v1/schedules/${id}` },
+      ScheduleDetailDtoSchema,
+    );
+  },
+
+  async patchSchedule(
+    id: string,
+    input: SchedulePatchRequest,
+  ): Promise<ScheduleDetailDto> {
+    return apiFetch(
+      {
+        method: "PATCH",
+        path: `/v1/schedules/${id}`,
+        body: SchedulePatchRequestSchema.parse(input),
+      },
+      ScheduleDetailDtoSchema,
+    );
+  },
+
+  async deleteSchedule(id: string) {
+    return apiFetch(
+      { method: "DELETE", path: `/v1/schedules/${id}` },
+      DeleteScheduleResponseSchema,
+    );
   },
 };
 
