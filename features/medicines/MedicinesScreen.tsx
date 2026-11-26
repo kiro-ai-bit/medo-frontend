@@ -8,7 +8,7 @@ import { SectionState, type SectionStatus } from "@lib/shared/six-state";
 import { Button } from "@components/ui/button";
 import { useConnectivity } from "@lib/state/client/connectivityStore";
 import { medicineCache } from "@lib/offline/db/caches";
-import { usePatientContext } from "@features/patient-context";
+import { PatientSwitcher, usePatientContext } from "@features/patient-context";
 import { useMedicines } from "./hooks";
 
 function MedicineRow({ m }: { m: PatientMedicineSummaryDto }) {
@@ -41,6 +41,15 @@ export function MedicinesScreen() {
   const [cached, setCached] = useState<PatientMedicineSummaryDto[] | null>(
     null,
   );
+
+  if (!ctx) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
+        <h1 className="text-xl font-semibold">Medicines</h1>
+        <PatientSwitcher />
+      </main>
+    );
+  }
 
   // Offline fallback: Dexie display slice when API fails in degraded mode.
   if (connectivity === "degraded" && q.isError && !cached) {

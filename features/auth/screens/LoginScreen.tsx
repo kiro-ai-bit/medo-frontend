@@ -17,6 +17,7 @@ import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
 import { useLogin, useResendVerification } from "../hooks";
 import { isApiError } from "@lib/api/http/errors";
+import { consumePendingInvite } from "@lib/state/client/inviteHandoff";
 
 export function LoginScreen() {
   const router = useRouter();
@@ -61,8 +62,15 @@ export function LoginScreen() {
     }
     try {
       await submit(parsed.data);
+      // Explicit `next` wins; otherwise resume a stashed care-invite landing
+      // (LLD §6.10 — survives the verify-email detour via localStorage).
+      const stashed = consumePendingInvite();
       const safeNext =
-        next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+        next && next.startsWith("/") && !next.startsWith("//")
+          ? next
+          : stashed
+            ? `/invite/${encodeURIComponent(stashed)}`
+            : "/";
       router.replace(safeNext);
     } catch {
       // error state rendered below
@@ -162,7 +170,12 @@ export function LoginScreen() {
             >
               Forgot password?
             </Link>
-            <Link href="/signup" className="text-zinc-600 hover:underline">
+            <Link
+              href={
+                next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"
+              }
+              className="text-zinc-600 hover:underline"
+            >
               Create account
             </Link>
           </div>

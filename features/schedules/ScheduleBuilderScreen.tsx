@@ -6,7 +6,7 @@ import { SectionState } from "@lib/shared/six-state";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
-import { usePatientContext } from "@features/patient-context";
+import { PatientSwitcher, usePatientContext } from "@features/patient-context";
 import { useMedicines } from "@features/medicines";
 import { useCreateSchedule } from "./hooks";
 import {
@@ -43,6 +43,15 @@ export function ScheduleBuilderScreen() {
   const [endDate, setEndDate] = useState("");
   const [tz, setTz] = useState(browserTimezone());
   const [error, setError] = useState<string | null>(null);
+
+  if (!ctx) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
+        <h1 className="text-xl font-semibold">New schedule</h1>
+        <PatientSwitcher />
+      </main>
+    );
+  }
 
   const recurrenceInput = {
     kind,

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import type { DoseSummaryDto } from "@kiro-ai-bit/contracts";
@@ -15,14 +16,18 @@ import { useState } from "react";
 import {
   LinkEndedBanner,
   PatientSwitcher,
+  useCareLinks,
   useLinkEndWatch,
   usePatientContext,
 } from "@features/patient-context";
+import { useSessionStore } from "@lib/state/client/sessionStore";
+import { actorLabel } from "./actor";
 import {
   NotificationBell,
   PushEnableCta,
   useReminderMetaSync,
 } from "@features/notifications";
+import { GamificationWidget } from "@features/gamification";
 import {
   useMarkDose,
   useSnoozeDose,
@@ -41,6 +46,7 @@ interface DoseView {
   scheduledAt: string;
   outcome: string | null;
   skippedByUser: boolean;
+  actorId: string | null;
 }
 
 function toDoseView(d: DoseSummaryDto | CachedDose): DoseView {
@@ -54,6 +60,7 @@ function toDoseView(d: DoseSummaryDto | CachedDose): DoseView {
       scheduledAt: d.scheduledAt,
       outcome: d.outcome === "unmarked" ? null : d.outcome,
       skippedByUser: d.skippedByUser,
+      actorId: d.actorId,
     };
   }
   return {
@@ -65,6 +72,7 @@ function toDoseView(d: DoseSummaryDto | CachedDose): DoseView {
     scheduledAt: d.scheduledAt,
     outcome: d.outcome,
     skippedByUser: d.skippedByUser,
+    actorId: d.actorId,
   };
 }
 
@@ -75,6 +83,7 @@ interface CardModel {
   dosage: string;
   window: DoseWindow;
   label: string;
+  actorText: string | null;
 }
 
 function DoseCard({
@@ -145,6 +154,11 @@ function DoseCard({
           </Button>
         </div>
       ) : null}
+      {card.actorText ? (
+        <p className="mt-2 text-xs text-zinc-400" data-testid="actor-label">
+          {card.actorText}
+        </p>
+      ) : null}
     </li>
   );
 }
@@ -154,9 +168,11 @@ export function TodayScreen() {
   useReminderMetaSync();
   const ctx = usePatientContext();
   const connectivity = useConnectivity();
+  const userId = useSessionStore((s) => s.userId);
+  const links = useCareLinks();
   const params = useSearchParams();
   const focusDoseId = params.get("dose");
-  const { doses, gamification } = useTodayFanout(ctx?.patientId ?? "");
+  const { doses } = useTodayFanout(ctx?.patientId ?? "");
   const mark = useMarkDose(ctx?.patientId ?? "");
   const snooze = useSnoozeDose(ctx?.patientId ?? "");
   const [cached, setCached] = useState<{
@@ -220,6 +236,7 @@ export function TodayScreen() {
       dosage: med?.dosage ?? "",
       window,
       label,
+      actorText: actorLabel(v.actorId, userId, links.data ?? []),
     };
   });
 
@@ -236,16 +253,14 @@ export function TodayScreen() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Today</h1>
         <div className="flex items-center gap-3">
+          <Link
+            href="/care-links"
+            className="text-sm text-zinc-600 hover:underline"
+          >
+            Care
+          </Link>
           <NotificationBell />
-          {gamification.data ? (
-            <span
-              className="text-sm text-zinc-600"
-              data-testid="harmony-points"
-            >
-              {gamification.data.harmonyPoints} pts ·{" "}
-              {gamification.data.themeState}
-            </span>
-          ) : null}
+          <GamificationWidget patientId={ctx.patientId} />
         </div>
       </header>
       <LinkEndedBanner />

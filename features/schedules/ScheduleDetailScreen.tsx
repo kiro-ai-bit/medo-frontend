@@ -6,7 +6,7 @@ import { SectionState, type SectionStatus } from "@lib/shared/six-state";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
-import { usePatientContext } from "@features/patient-context";
+import { PatientSwitcher, usePatientContext } from "@features/patient-context";
 import { useDeleteSchedule, usePatchSchedule, useSchedule } from "./hooks";
 
 export function ScheduleDetailScreen() {
@@ -21,6 +21,15 @@ export function ScheduleDetailScreen() {
   const [excDate, setExcDate] = useState("");
   const [excKind, setExcKind] = useState<"skip" | "time-override">("skip");
   const [excTime, setExcTime] = useState("08:00");
+
+  if (!ctx) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
+        <h1 className="text-xl font-semibold">Schedule</h1>
+        <PatientSwitcher />
+      </main>
+    );
+  }
 
   const d = s.data;
   const status: SectionStatus = s.isPending

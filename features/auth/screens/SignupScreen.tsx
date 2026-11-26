@@ -171,7 +171,10 @@ export function SignupScreen() {
           </form>
           <p className="mt-4 text-sm text-zinc-600">
             Already have an account?{" "}
-            <Link href="/login" className="hover:underline">
+            <Link
+              href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+              className="hover:underline"
+            >
               Log in
             </Link>
           </p>

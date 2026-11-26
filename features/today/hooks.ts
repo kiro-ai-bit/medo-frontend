@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { scheduleDoseClient } from "@lib/api/schedule-dose";
 import { medicineClient } from "@lib/api/medicine";
-import { gamificationClient } from "@lib/api/gamification";
+import { useGamification } from "@features/gamification";
 import { useConnectivity } from "@lib/state/client/connectivityStore";
 import { queryClient } from "@lib/state/query/queryClient";
 import { queryKeys } from "@lib/state/query/queryKeys";
@@ -40,11 +40,7 @@ export function useTodayFanout(patientId: string) {
   const from = `${new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10)}T00:00:00.000Z`;
   const to = `${today}T23:59:59.999Z`;
   const doses = useDoseWindowQuery(patientId, from, to);
-  const gamification = useQuery({
-    queryKey: queryKeys.gamification(patientId),
-    queryFn: () => gamificationClient.getGamification(patientId),
-    enabled: patientId.length > 0,
-  });
+  const gamification = useGamification(patientId);
   return { doses, gamification, today };
 }
 

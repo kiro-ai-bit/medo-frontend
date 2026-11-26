@@ -13,7 +13,7 @@ import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
 import { queryKeys } from "@lib/state/query/queryKeys";
-import { usePatientContext } from "@features/patient-context";
+import { PatientSwitcher, usePatientContext } from "@features/patient-context";
 import {
   useArchiveMedicine,
   useDeleteMedicine,
@@ -103,6 +103,15 @@ export function MedicineDetailScreen() {
     enabled: !!patientId,
     select: (doses) => doses.filter((d) => d.medicineId === id),
   });
+
+  if (!ctx) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
+        <h1 className="text-xl font-semibold">Medicine</h1>
+        <PatientSwitcher />
+      </main>
+    );
+  }
 
   const m = med.data;
   const status: SectionStatus = med.isPending

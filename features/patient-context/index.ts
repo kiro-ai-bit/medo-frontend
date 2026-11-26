@@ -6,4 +6,8 @@ export {
   requirePatientContext,
   NoPatientContextError,
 } from "./hooks";
-export { PatientSwitcher, LinkEndedBanner } from "./components";
+export {
+  PatientSwitcher,
+  PatientContextBar,
+  LinkEndedBanner,
+} from "./components";

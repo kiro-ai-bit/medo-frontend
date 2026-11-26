@@ -7,7 +7,7 @@ import { SectionState } from "@lib/shared/six-state";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
-import { usePatientContext } from "@features/patient-context";
+import { PatientSwitcher, usePatientContext } from "@features/patient-context";
 import {
   useCatalogEntry,
   useCatalogSearch,
@@ -190,6 +190,15 @@ export function NewMedicineScreen() {
     price: "",
     pharmacyName: "",
   });
+
+  if (!ctx) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
+        <h1 className="text-xl font-semibold">Add medicine</h1>
+        <PatientSwitcher />
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">

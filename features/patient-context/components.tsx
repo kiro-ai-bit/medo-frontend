@@ -1,6 +1,7 @@
 "use client";
 
 import { usePatientContextStore } from "@lib/state/client/patientContextStore";
+import { useSessionStore } from "@lib/state/client/sessionStore";
 import { useCareLinks } from "./hooks";
 import { SectionState } from "@lib/shared/six-state";
 
@@ -45,6 +46,52 @@ export function PatientSwitcher() {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Compact caregiver patient switcher mounted in the app shell (FR-FE-005):
+ * renders only for Caregiver sessions with ≥1 linked patient; switching or
+ * clearing updates the patient context every patient-scoped screen reads.
+ */
+export function PatientContextBar() {
+  const role = useSessionStore((s) => s.me?.role);
+  const links = useCareLinks();
+  const selectedLinkId = usePatientContextStore((s) => s.selectedLinkId);
+  const selectLink = usePatientContextStore((s) => s.selectLink);
+  const clearSelection = usePatientContextStore((s) => s.clearSelection);
+
+  if (role !== "Caregiver") return null;
+  const patientLinks = (links.data ?? []).filter(
+    (l) => l.direction === "as-caregiver",
+  );
+  if (patientLinks.length === 0) return null;
+
+  return (
+    <div
+      className="border-b border-zinc-200 bg-white/60 px-4 py-2"
+      data-testid="patient-context-bar"
+    >
+      <label className="flex items-center gap-2 text-xs text-zinc-500">
+        Patient
+        <select
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900"
+          value={selectedLinkId ?? ""}
+          onChange={(e) => {
+            const link = patientLinks.find((l) => l.linkId === e.target.value);
+            if (link) selectLink(link);
+            else clearSelection();
+          }}
+        >
+          <option value="">Select patient…</option>
+          {patientLinks.map((l) => (
+            <option key={l.linkId} value={l.linkId}>
+              {l.counterpart.displayName}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
   );
 }
 

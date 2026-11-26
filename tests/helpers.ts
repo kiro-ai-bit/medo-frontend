@@ -1,4 +1,6 @@
 import { useConnectivityStore } from "@lib/state/client/connectivityStore";
+import { useGamificationStore } from "@lib/state/client/gamificationStore";
+import { clearPendingInvite } from "@lib/state/client/inviteHandoff";
 import { useSessionStore } from "@lib/state/client/sessionStore";
 import { queryClient } from "@lib/state/query/queryClient";
 import { setUnauthorizedHandler } from "@lib/api/http/apiFetch";
@@ -13,6 +15,8 @@ export function resetStores(): void {
     notice: null,
   });
   useConnectivityStore.setState({ status: "online", pendingSyncCount: 0 });
+  useGamificationStore.getState().reset();
+  clearPendingInvite();
   queryClient.clear();
   setUnauthorizedHandler(null);
 }

@@ -6,6 +6,10 @@ import { useSessionStore } from "@lib/state/client/sessionStore";
 import { resetStores, jsonResponse, errorEnvelope } from "../helpers";
 import { LoginScreen } from "@features/auth/screens/LoginScreen";
 import { SessionGuard, PublicOnly } from "@features/auth/guards";
+import {
+  peekPendingInvite,
+  stashPendingInvite,
+} from "@lib/state/client/inviteHandoff";
 
 const replace = vi.fn();
 const push = vi.fn();
@@ -68,6 +72,42 @@ describe("LoginScreen", () => {
     expect(s.status).toBe("authenticated");
     expect(s.accessToken).toBe("at-1");
     expect(s.me?.email).toBe("a@b.com");
+  });
+
+  it("resumes a stashed care invite when no next param", async () => {
+    stashPendingInvite("invite_tok_1");
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, LOGIN_OK))
+      .mockResolvedValueOnce(jsonResponse(200, ME));
+    renderWithClient(<LoginScreen />);
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "a@b.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith("/invite/invite_tok_1"),
+    );
+    expect(peekPendingInvite()).toBeNull();
+  });
+
+  it("explicit next wins over a stashed invite", async () => {
+    stashPendingInvite("invite_tok_1");
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, LOGIN_OK))
+      .mockResolvedValueOnce(jsonResponse(200, ME));
+    search = new URLSearchParams("next=/today");
+    renderWithClient(<LoginScreen />);
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "a@b.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/today"));
   });
 
   it("shows server error on bad credentials", async () => {

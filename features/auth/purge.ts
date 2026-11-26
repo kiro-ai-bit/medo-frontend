@@ -1,5 +1,6 @@
 import { runPurgeSteps } from "@lib/state/client/purgeSteps";
 import { useConnectivityStore } from "@lib/state/client/connectivityStore";
+import { useGamificationStore } from "@lib/state/client/gamificationStore";
 import { useSessionStore } from "@lib/state/client/sessionStore";
 import { queryClient } from "@lib/state/query/queryClient";
 
@@ -21,6 +22,7 @@ export async function purgeClientState(reason: PurgeReason): Promise<void> {
     reason === "expired" ? "expired" : reason === "deleted" ? "deleted" : null;
   useSessionStore.getState().clear(notice);
   useConnectivityStore.getState().reset();
+  useGamificationStore.getState().reset();
   if (typeof window !== "undefined" && window.location.pathname !== "/login") {
     const suffix = notice ? `?reason=${notice}` : "";
     window.location.assign(`/login${suffix}`);
