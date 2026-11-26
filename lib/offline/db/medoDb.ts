@@ -23,6 +23,7 @@ export interface CachedMedicine {
   dosage: string;
   photoUrl: string | null;
   dosesRemaining: number | null;
+  refillThreshold: number | null;
   archived: boolean;
   fetchedAt: string;
 }

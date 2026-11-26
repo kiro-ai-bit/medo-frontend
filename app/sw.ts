@@ -1,4 +1,4 @@
-import { CacheFirst, NetworkOnly, Serwist } from "serwist";
+import { CacheFirst, NavigationRoute, NetworkOnly, Serwist } from "serwist";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { ExpirationPlugin } from "@serwist/expiration";
 import { isApiRequest, isCacheablePhoto } from "@lib/sw/rules";
@@ -41,6 +41,18 @@ const serwist = new Serwist({
     },
   ],
 });
+
+// Navigations fall back to the precached app shell when offline (LD-FE-11).
+serwist.registerRoute(
+  new NavigationRoute(
+    async () => {
+      const shell = await caches.match("/");
+      if (!shell) throw new Error("app shell not precached");
+      return shell;
+    },
+    { denylist: [/^\/_next\//, /^\/api\//, /\/sw\.js$/] },
+  ),
+);
 
 serwist.addEventListeners();
 export default serwist;

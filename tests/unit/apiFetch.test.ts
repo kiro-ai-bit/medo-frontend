@@ -172,3 +172,22 @@ describe("apiFetch", () => {
     });
   });
 });
+
+describe("connectivity proof-clear (INV-FE-6)", () => {
+  it("online event alone does not clear degraded; 2xx apiFetch does", async () => {
+    const { registerConnectivityListeners } =
+      await import("@lib/state/client/connectivityStore");
+    useConnectivityStore.getState().engage();
+    const cleanup = registerConnectivityListeners(() => {});
+    window.dispatchEvent(new Event("online"));
+    expect(useConnectivityStore.getState().status).toBe("degraded");
+    cleanup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 200 })),
+    );
+    await apiFetch({ method: "GET", path: "/v1/me", isAuthRoute: true });
+    expect(useConnectivityStore.getState().status).toBe("online");
+    vi.unstubAllGlobals();
+  });
+});

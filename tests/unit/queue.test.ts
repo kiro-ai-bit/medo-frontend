@@ -27,10 +27,7 @@ function okHandlers(calls: string[]): ReplayHandlers {
   };
 }
 
-async function seed(
-  doseId: string,
-  over: Partial<EnqueueInput> = {},
-) {
+async function seed(doseId: string, over: Partial<EnqueueInput> = {}) {
   return enqueueWrite({
     type: "outcome",
     patientId: PID,
@@ -191,10 +188,55 @@ describe("enqueueWrite cap + age eviction (LD-FE-09)", () => {
   it("evicts entries older than MAX_QUEUE_AGE_DAYS on enqueue", async () => {
     const old = await seed("old");
     await medoDb.writeQueue.update(old.entryId!, {
-      enqueuedAt: new Date(Date.now() - (MAX_QUEUE_AGE_DAYS + 1) * 86_400_000).toISOString(),
+      enqueuedAt: new Date(
+        Date.now() - (MAX_QUEUE_AGE_DAYS + 1) * 86_400_000,
+      ).toISOString(),
     });
     await seed("new");
     const ids = (await medoDb.writeQueue.toArray()).map((r) => r.doseId);
     expect(ids).toEqual(["new"]);
+  });
+});
+
+describe("replayQueue extras (LD-FE-10)", () => {
+  it("honors 429 Retry-After over exponential backoff", async () => {
+    useConnectivityStore.getState().clear();
+    await seed("d1");
+    const h: ReplayHandlers = {
+      markOutcome: async () => {
+        throw new ApiError({
+          status: 429,
+          code: "RATE_LIMITED",
+          message: "x",
+          retryAfterSeconds: 120,
+        });
+      },
+      snoozeDose: async () => {},
+    };
+    await replayQueue(h);
+    const row = (await medoDb.writeQueue.orderBy("entryId").toArray())[0];
+    const delay = Date.parse(row!.nextAttemptAt) - Date.now();
+    expect(delay).toBeGreaterThan(100_000);
+    expect(delay).toBeLessThan(140_000);
+    expect(row?.dead).toBeFalsy();
+  });
+
+  it("does not send payload.markedAt to markOutcome (strict contract)", async () => {
+    useConnectivityStore.getState().clear();
+    await enqueueWrite({
+      type: "outcome",
+      patientId: PID,
+      doseId: "d1",
+      payload: { outcome: "taken-on-time", markedAt: "2026-11-26T01:00:00Z" },
+    });
+    const seen: unknown[] = [];
+    const h: ReplayHandlers = {
+      markOutcome: async (doseId, outcome, ...rest) => {
+        seen.push(rest);
+      },
+      snoozeDose: async () => {},
+    };
+    await replayQueue(h);
+    expect(seen).toEqual([[]]);
   });
 });

@@ -81,6 +81,7 @@ describe("medoDb v1 schema (INV-FE-1/4, LD-FE-08)", () => {
         dosage: "500mg",
         photoUrl: null,
         dosesRemaining: 12,
+        refillThreshold: 6,
         archived: false,
         fetchedAt: "2026-11-26T00:00:00.000Z",
       },

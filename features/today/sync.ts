@@ -39,6 +39,7 @@ function toCachedMedicine(m: PatientMedicineSummaryDto): {
   dosage: string;
   photoUrl: string | null;
   dosesRemaining: number | null;
+  refillThreshold: number | null;
   archived: boolean;
   fetchedAt: string;
 } {
@@ -49,6 +50,7 @@ function toCachedMedicine(m: PatientMedicineSummaryDto): {
     dosage: m.dosage,
     photoUrl: m.catalog.photos.A ?? m.catalog.photos.B ?? m.catalog.photos.C,
     dosesRemaining: m.dosesRemaining,
+    refillThreshold: m.refillThreshold ?? null,
     archived: false,
     fetchedAt: new Date().toISOString(),
   };

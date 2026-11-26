@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isApiRequest,
-  isCacheablePhoto,
-  isPhotoRequest,
-} from "@lib/sw/rules";
+import { isApiRequest, isCacheablePhoto, isPhotoRequest } from "@lib/sw/rules";
 
 const u = (s: string) => new URL(s);
 
@@ -19,7 +15,9 @@ describe("sw route rules (LD-FE-11)", () => {
   });
 
   it("photos match photos.simmaps.com origin only", () => {
-    expect(isPhotoRequest(u(`https://photos.simmaps.com/catalog/e1/A/x.jpg`))).toBe(true);
+    expect(
+      isPhotoRequest(u(`https://photos.simmaps.com/catalog/e1/A/x.jpg`)),
+    ).toBe(true);
     expect(isPhotoRequest(u("https://photos.simmaps.com.evil.com/x"))).toBe(
       false,
     );

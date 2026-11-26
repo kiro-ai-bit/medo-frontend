@@ -23,6 +23,10 @@ async function syncPendingCount(): Promise<void> {
   useConnectivityStore.getState().setPendingSyncCount(n);
 }
 
+function warnQueue(message: string): void {
+  useConnectivityStore.getState().setQueueNotice(message);
+}
+
 /** FIFO enqueue inside one Dexie tx; evicts oldest beyond cap (LD-FE-09). */
 export async function enqueueWrite(input: EnqueueInput): Promise<QueueEntry> {
   const now = new Date().toISOString();
@@ -51,6 +55,9 @@ export async function enqueueWrite(input: EnqueueInput): Promise<QueueEntry> {
       const ageEvicted =
         ((await metaStore.get<number>(EVICTED_KEY)) ?? 0) + stale.length;
       await metaStore.set(EVICTED_KEY, ageEvicted);
+      warnQueue(
+        `${stale.length} offline change${stale.length === 1 ? "" : "s"} older than ${MAX_QUEUE_AGE_DAYS} days ${stale.length === 1 ? "was" : "were"} discarded.`,
+      );
     }
     const count = await medoDb.writeQueue.count();
     if (count > MAX_QUEUE_ENTRIES) {
@@ -63,6 +70,9 @@ export async function enqueueWrite(input: EnqueueInput): Promise<QueueEntry> {
       const evicted =
         ((await metaStore.get<number>(EVICTED_KEY)) ?? 0) + overflow;
       await metaStore.set(EVICTED_KEY, evicted);
+      warnQueue(
+        `Offline queue is full — ${overflow} oldest change${overflow === 1 ? "" : "s"} discarded.`,
+      );
     }
   });
   await syncPendingCount();
@@ -74,19 +84,16 @@ export async function pendingCount(): Promise<number> {
 }
 
 export interface ReplayHandlers {
-  markOutcome: (
-    doseId: string,
-    outcome: string,
-    markedAt?: string,
-  ) => Promise<unknown>;
+  markOutcome: (doseId: string, outcome: string) => Promise<unknown>;
   snoozeDose: (doseId: string) => Promise<unknown>;
 }
 
 const defaultHandlers: ReplayHandlers = {
-  markOutcome: (doseId, outcome, markedAt) =>
+  // Contract MarkDoseOutcomeRequestSchema is strict {outcome} — markedAt is
+  // stored for diagnostics but never sent (server stamps its own time).
+  markOutcome: (doseId, outcome) =>
     scheduleDoseClient.markOutcome(doseId, {
       outcome: outcome as "taken-on-time" | "taken-late" | "skipped",
-      ...(markedAt ? { markedAt } : {}),
     }),
   snoozeDose: (doseId) => scheduleDoseClient.snoozeDose(doseId),
 };
@@ -126,7 +133,6 @@ export async function replayQueue(
           await handlers.markOutcome(
             entry.doseId,
             entry.payload.outcome ?? "taken-on-time",
-            entry.payload.markedAt,
           );
         } else {
           await handlers.snoozeDose(entry.doseId);
@@ -135,14 +141,19 @@ export async function replayQueue(
         sent++;
       } catch (e) {
         const attempts = entry.attempts + 1;
+        // 429 Retry-After wins over exponential backoff (LD-FE-10).
+        const retryAfter = isApiError(e) ? e.retryAfterSeconds : null;
+        const delay =
+          retryAfter != null ? retryAfter * 1000 : backoffMs(attempts);
         await medoDb.writeQueue.update(entry.entryId!, {
           attempts,
           lastError: isApiError(e) ? e.code : "UNKNOWN",
-          nextAttemptAt: new Date(
-            Date.now() + backoffMs(attempts),
-          ).toISOString(),
+          nextAttemptAt: new Date(Date.now() + delay).toISOString(),
           ...(isPermanent(e) ? { dead: true } : {}),
         });
+        if (isPermanent(e)) {
+          warnQueue("An offline change couldn't be synced and was set aside.");
+        }
         break;
       }
     }

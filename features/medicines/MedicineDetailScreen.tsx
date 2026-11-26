@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { scheduleDoseClient } from "@lib/api/schedule-dose";
 import { isApiError } from "@lib/api/http/errors";
+import { doseCache } from "@lib/offline/db/caches";
+import type { CachedDose } from "@lib/offline/db/medoDb";
+import type { DoseSummaryDto } from "@kiro-ai-bit/contracts";
 import { SectionState, type SectionStatus } from "@lib/shared/six-state";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
@@ -17,6 +20,23 @@ import {
   useMedicine,
   usePatchMedicine,
 } from "./hooks";
+
+function cachedDoseToSummary(d: CachedDose): DoseSummaryDto {
+  return {
+    id: d.doseId,
+    medicineId: d.medicineId,
+    patientId: d.patientId,
+    scheduleId: d.scheduleId,
+    localDate: d.localDate,
+    doseTime: d.doseTime,
+    scheduledAt: d.scheduledAt,
+    outcome: (d.outcome ?? "unmarked") as DoseSummaryDto["outcome"],
+    skippedByUser: d.skippedByUser,
+    snoozedUntil: d.snoozedUntil,
+    actorId: d.actorId,
+    markedAt: d.markedAt,
+  };
+}
 
 const OUTCOMES = [
   "",
@@ -56,13 +76,30 @@ export function MedicineDetailScreen() {
       `${today}T23:59:59.999Z`,
       outcome || undefined,
     ),
-    queryFn: () =>
-      scheduleDoseClient.listDoses(
-        patientId,
-        `${today.slice(0, 8)}01T00:00:00.000Z`,
-        `${today}T23:59:59.999Z`,
-        outcome || undefined,
-      ),
+    queryFn: async () => {
+      const from = `${today.slice(0, 8)}01T00:00:00.000Z`;
+      const to = `${today}T23:59:59.999Z`;
+      try {
+        return await scheduleDoseClient.listDoses(
+          patientId,
+          from,
+          to,
+          outcome || undefined,
+        );
+      } catch (e) {
+        // Offline/degraded: serve the Dexie dose slice (populate-on-read cache).
+        if (!isApiError(e) || e.status !== 0) throw e;
+        const cached = await doseCache.dosesForRange(
+          patientId,
+          from.slice(0, 10),
+          to.slice(0, 10),
+        );
+        return cached
+          .filter((d) => d.medicineId === id)
+          .filter((d) => !outcome || d.outcome === outcome)
+          .map(cachedDoseToSummary);
+      }
+    },
     enabled: !!patientId,
     select: (doses) => doses.filter((d) => d.medicineId === id),
   });

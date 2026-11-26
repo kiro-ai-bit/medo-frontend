@@ -28,6 +28,7 @@ export function useMedicines(patientId: string) {
           photoUrl:
             m.catalog.photos.A ?? m.catalog.photos.B ?? m.catalog.photos.C,
           dosesRemaining: m.dosesRemaining,
+          refillThreshold: m.refillThreshold ?? null,
           archived: false,
           fetchedAt: new Date().toISOString(),
         })),
