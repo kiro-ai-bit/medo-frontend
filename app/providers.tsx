@@ -13,6 +13,7 @@ import {
 import { registerConnectivityListeners } from "@lib/state/client/connectivityStore";
 import { medoDb } from "@lib/offline/db/medoDb";
 import { usePatientContextStore } from "@lib/state/client/patientContextStore";
+import { SwRegister } from "@components/SwRegister";
 
 registerPurgeStep(async () => {
   await medoDb.delete();
@@ -36,6 +37,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BootEffects />
+        <SwRegister />
         {children}
       </AuthProvider>
     </QueryClientProvider>

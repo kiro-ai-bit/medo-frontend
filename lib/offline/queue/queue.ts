@@ -36,7 +36,7 @@ export async function enqueueWrite(input: EnqueueInput): Promise<QueueEntry> {
     nextAttemptAt: now,
     lastError: null,
   };
-  await medoDb.transaction("rw", medoDb.writeQueue, async () => {
+  await medoDb.transaction("rw", [medoDb.writeQueue, medoDb.meta], async () => {
     const id = (await medoDb.writeQueue.add(entry)) as number;
     entry.entryId = id;
     const cutoff = new Date(
