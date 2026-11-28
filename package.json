@@ -16,7 +16,7 @@
     "format:write": "prettier --write ."
   },
   "dependencies": {
-    "@kiro-ai-bit/contracts": "file:../medo-shared/packages/contracts",
+    "@kiro-ai-bit/contracts": "0.1.0",
     "@sentry/nextjs": "11.18.0",
     "@serwist/expiration": "^9.6.0",
     "@serwist/next": "^9.6.0",
@@ -34,9 +34,9 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@kiro-ai-bit/eslint-config": "file:../medo-shared/packages/eslint-config",
-    "@kiro-ai-bit/test-utils": "file:../medo-shared/packages/test-utils",
-    "@kiro-ai-bit/tsconfig": "file:../medo-shared/packages/tsconfig",
+    "@kiro-ai-bit/eslint-config": "0.1.0",
+    "@kiro-ai-bit/test-utils": "0.1.0",
+    "@kiro-ai-bit/tsconfig": "0.1.0",
     "@tailwindcss/postcss": "4.3.5",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
