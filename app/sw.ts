@@ -17,7 +17,9 @@ declare const self: WorkerGlobalScope;
 const PHOTO_CACHE = "medo-photos";
 
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  // "/" + "/today" are static shells precached for the offline navigation
+  // fallback — the manifest only carries _next assets, no HTML.
+  precacheEntries: ["/", "/today", ...self.__SW_MANIFEST],
   precacheOptions: { cleanupOutdatedCaches: true },
   // LD-FE-11: next-navigation update — no skipWaiting, claim on activate.
   skipWaiting: false,
@@ -45,13 +47,23 @@ const serwist = new Serwist({
   ],
 });
 
-// Navigations fall back to the precached app shell when offline (LD-FE-11).
+// Navigations are network-first; only a failed fetch falls back to the
+// precached app shell (LD-FE-11). The handler MUST try the network —
+// NavigationRoute does not do this automatically, and a throw here
+// surfaces to the user as ERR_FAILED on every page load.
 serwist.registerRoute(
   new NavigationRoute(
-    async () => {
-      const shell = await caches.match("/");
-      if (!shell) throw new Error("app shell not precached");
-      return shell;
+    async ({ event }) => {
+      try {
+        const preload = await event.preloadResponse;
+        if (preload) return preload;
+        return await fetch(event.request);
+      } catch {
+        const shell =
+          (await caches.match("/today")) ?? (await caches.match("/"));
+        if (shell) return shell;
+        throw new Error("offline and no precached shell");
+      }
     },
     { denylist: [/^\/_next\//, /^\/api\//, /\/sw\.js$/] },
   ),
