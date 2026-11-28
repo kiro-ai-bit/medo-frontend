@@ -28,6 +28,7 @@ import {
   useReminderMetaSync,
 } from "@features/notifications";
 import { GamificationWidget } from "@features/gamification";
+import { PendingInvites } from "./PendingInvites";
 import {
   useMarkDose,
   useSnoozeDose,
@@ -196,11 +197,18 @@ export function TodayScreen() {
   }, [patientId, connectivity, doses.isError]);
 
   if (!ctx) {
+    const isCaregiver = useSessionStore.getState().me?.role === "Caregiver";
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-6">
         <LinkEndedBanner />
         <h1 className="text-xl font-semibold">Today</h1>
         <PatientSwitcher />
+        {isCaregiver ? <PendingInvites /> : null}
+        <p className="text-sm">
+          <Link href="/care-links" className="text-zinc-600 underline">
+            Care links
+          </Link>
+        </p>
       </main>
     );
   }

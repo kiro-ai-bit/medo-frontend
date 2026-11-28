@@ -76,7 +76,12 @@ function schedDto() {
 }
 
 function mockApi(
-  over: { doses?: unknown[]; links?: unknown[]; failOutcome?: boolean } = {},
+  over: {
+    doses?: unknown[];
+    links?: unknown[];
+    invites?: unknown[];
+    failOutcome?: boolean;
+  } = {},
 ) {
   const fetchMock = vi.fn(
     async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -101,6 +106,9 @@ function mockApi(
           themeState: "Harmony",
           updatedAt: null,
         });
+      }
+      if (url.includes("/v1/care/invites")) {
+        return jsonResponse(200, { invites: over.invites ?? [] });
       }
       if (url.includes("/v1/care/links")) {
         return jsonResponse(200, { links: over.links ?? [] });
@@ -239,5 +247,44 @@ describe("TodayScreen", () => {
       timeout: 8000,
     });
     expect(screen.getByText("Patient A")).toBeTruthy();
+  });
+
+  it("caregiver with no links sees received invites and a care-links path", async () => {
+    useSessionStore.setState({
+      me: {
+        displayName: "CG",
+        timezone: "Asia/Karachi",
+        role: "Caregiver",
+        email: "c@c.co",
+        emailVerified: true,
+      },
+      userId: "99999999-9999-4999-8999-999999999999",
+    });
+    mockApi({
+      links: [],
+      invites: [
+        {
+          inviteId: "82000000-0000-4000-8000-000000000001",
+          direction: "received",
+          counterpartyDisplayName: "testp",
+          expiresAt: "2026-12-05T00:00:00.000Z",
+          createdAt: "2026-11-28T00:00:00.000Z",
+        },
+      ],
+    });
+    renderToday();
+    await waitFor(() => screen.getByTestId("pending-invites"), {
+      timeout: 8000,
+    });
+    await waitFor(() => screen.getByText(/testp invited you/), {
+      timeout: 8000,
+    });
+    expect(
+      screen.getAllByText(/invite link from your email/i).length,
+    ).toBeGreaterThan(0);
+    const careLink = screen
+      .getAllByRole("link")
+      .find((a) => a.getAttribute("href") === "/care-links");
+    expect(careLink).toBeTruthy();
   });
 });
