@@ -38,7 +38,13 @@ function doseDto(over: Record<string, unknown> = {}) {
   };
 }
 
-function medDto() {
+function medDto(
+  photos: { A: string | null; B: string | null; C: string | null } = {
+    A: null,
+    B: null,
+    C: null,
+  },
+) {
   return {
     id: "51000000-0000-4000-8000-000000000001",
     patientId: PID,
@@ -47,7 +53,7 @@ function medDto() {
       brandName: "Amoxicillin",
       form: "capsule",
       packagingQuantity: 21,
-      photos: { A: null, B: null, C: null },
+      photos,
     },
     prescribingDoctor: "Dr X",
     dosage: "500mg",
@@ -81,6 +87,7 @@ function mockApi(
     links?: unknown[];
     invites?: unknown[];
     failOutcome?: boolean;
+    medPhotos?: { A: string | null; B: string | null; C: string | null };
   } = {},
 ) {
   const fetchMock = vi.fn(
@@ -95,7 +102,9 @@ function mockApi(
         });
       }
       if (url.includes("/v1/medicines?")) {
-        return jsonResponse(200, { medicines: [medDto()] });
+        return jsonResponse(200, {
+          medicines: [medDto(over.medPhotos)],
+        });
       }
       if (url.includes("/v1/patients/") && url.includes("/schedules")) {
         return jsonResponse(200, { schedules: [schedDto()] });
@@ -211,6 +220,45 @@ describe("TodayScreen", () => {
     expect(entry[0]!.type).toBe("outcome");
     expect(entry[0]!.doseId).toBe(DID);
     expect(entry[0]!.payload.outcome).toBe("taken-on-time");
+  });
+
+  it("renders only doses whose localDate is today in the schedule timezone", async () => {
+    const yesterday = new Date(Date.now() - 86_400_000).toLocaleDateString(
+      "en-CA",
+      { timeZone: "Asia/Karachi" },
+    );
+    mockApi({
+      doses: [
+        doseDto(),
+        doseDto({
+          id: "d2000000-0000-4000-8000-000000000002",
+          localDate: yesterday,
+          doseTime: "19:19",
+          scheduledAt: new Date(Date.now() - 86_400_000).toISOString(),
+        }),
+      ],
+    });
+    renderToday();
+    await waitFor(() => expect(screen.getByTestId("dose-list")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Amoxicillin")).toBeTruthy());
+    expect(screen.queryByText(/19:19/)).toBeNull();
+    expect(screen.getByText(/08:00/)).toBeTruthy();
+  });
+
+  it("renders the catalog photo on dose cards when present", async () => {
+    mockApi({
+      medPhotos: {
+        A: "https://photos.example.com/a.jpg",
+        B: null,
+        C: null,
+      },
+    });
+    renderToday();
+    await waitFor(() => expect(screen.getByTestId("dose-list")).toBeTruthy());
+    const img = document.querySelector(
+      '[data-dose-id] img[src="https://photos.example.com/a.jpg"]',
+    );
+    expect(img).toBeTruthy();
   });
 
   it("shows empty state when no doses", async () => {

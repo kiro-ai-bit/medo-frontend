@@ -15,6 +15,7 @@ import {
   describeRecurrence,
   type RecurrenceKind,
 } from "./recurrence";
+import { validateScheduleInput } from "./validation";
 
 const KINDS: { value: RecurrenceKind; label: string }[] = [
   { value: "once", label: "Specific dates" },
@@ -68,13 +69,23 @@ export function ScheduleBuilderScreen() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const times = doseTimes
+      .split(/[\s,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const invalid = validateScheduleInput({
+      kind,
+      dates: recurrenceInput.dates ?? [],
+      byDay,
+      doseTimes: times,
+      startDate,
+      endDate,
+    });
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
     try {
-      const times = doseTimes
-        .split(/[\s,]+/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (times.length === 0)
-        throw new Error("At least one dose time required");
       const res = await create.mutateAsync({
         medicineId,
         recurrence: buildRecurrence(recurrenceInput),
@@ -237,9 +248,24 @@ export function ScheduleBuilderScreen() {
             <Input
               id="tz"
               required
+              list="tz-suggestions"
               value={tz}
               onChange={(e) => setTz(e.target.value)}
             />
+            <datalist id="tz-suggestions">
+              {[
+                ...new Set([
+                  tz,
+                  "UTC",
+                  "Asia/Karachi",
+                  "Asia/Dubai",
+                  "Europe/London",
+                  "America/New_York",
+                ]),
+              ].map((zone) => (
+                <option key={zone} value={zone} />
+              ))}
+            </datalist>
           </div>
 
           <p

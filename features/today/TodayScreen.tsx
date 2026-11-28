@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { DateTime } from "luxon";
 import type { DoseSummaryDto } from "@kiro-ai-bit/contracts";
 import type { CachedDose } from "@lib/offline/db/medoDb";
 import { SectionState, type SectionStatus } from "@lib/shared/six-state";
@@ -82,9 +83,24 @@ interface CardModel {
   doseTime: string;
   medicineName: string;
   dosage: string;
+  photoUrl: string | null;
   window: DoseWindow;
   label: string;
   actorText: string | null;
+}
+
+function DosePhoto({ src, alt }: { src: string | null; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-14 w-14 shrink-0 rounded-lg border border-zinc-200 object-cover"
+    />
+  );
 }
 
 function DoseCard({
@@ -119,11 +135,14 @@ function DoseCard({
       className={`rounded-xl border bg-white p-4 ${highlight ? "ring-2 ring-amber-400 border-amber-300" : "border-zinc-200"}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-medium">{card.medicineName}</p>
-          <p className="text-sm text-zinc-500">
-            {card.dosage} · {card.doseTime}
-          </p>
+        <div className="flex items-start gap-3">
+          <DosePhoto src={card.photoUrl} alt={card.medicineName} />
+          <div>
+            <p className="font-medium">{card.medicineName}</p>
+            <p className="text-sm text-zinc-500">
+              {card.dosage} · {card.doseTime}
+            </p>
+          </div>
         </div>
         <span
           className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700"
@@ -222,13 +241,31 @@ export function TodayScreen() {
   const medById = new Map(
     (doses.data?.medicines ?? cached?.medicines ?? []).map((m) =>
       "catalog" in m
-        ? ([m.id, { name: m.catalog.brandName, dosage: m.dosage }] as const)
-        : ([m.medicineId, { name: m.displayName, dosage: m.dosage }] as const),
+        ? ([
+            m.id,
+            {
+              name: m.catalog.brandName,
+              dosage: m.dosage,
+              photoUrl:
+                m.catalog.photos.A ?? m.catalog.photos.B ?? m.catalog.photos.C,
+            },
+          ] as const)
+        : ([
+            m.medicineId,
+            { name: m.displayName, dosage: m.dosage, photoUrl: m.photoUrl },
+          ] as const),
     ),
   );
-  const doseRows: (DoseSummaryDto | CachedDose)[] =
+  const allDoseRows: (DoseSummaryDto | CachedDose)[] =
     doses.data?.doses ?? cached?.doses ?? [];
   const now = new Date();
+  // Today screen shows only doses whose localDate is today in the schedule's
+  // timezone; the 7-day fetch exists to populate the offline Dexie cache.
+  const doseRows = allDoseRows.filter((d) => {
+    const tz = tzBySchedule.get(d.scheduleId) ?? "UTC";
+    const todayLocal = DateTime.fromJSDate(now).setZone(tz).toISODate();
+    return d.localDate === todayLocal;
+  });
   const cards: CardModel[] = doseRows.map((d) => {
     const v = toDoseView(d);
     const { window, label } = doseWindowLabel(
@@ -242,6 +279,7 @@ export function TodayScreen() {
       doseTime: v.doseTime,
       medicineName: med?.name ?? "Medicine",
       dosage: med?.dosage ?? "",
+      photoUrl: med?.photoUrl ?? null,
       window,
       label,
       actorText: actorLabel(v.actorId, userId, links.data ?? []),
