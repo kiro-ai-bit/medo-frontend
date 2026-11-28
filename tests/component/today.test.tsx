@@ -24,7 +24,9 @@ function doseDto(over: Record<string, unknown> = {}) {
     medicineId: "51000000-0000-4000-8000-000000000001",
     patientId: PID,
     scheduleId: "61000000-0000-4000-8000-000000000001",
-    localDate: "2026-11-26",
+    localDate: new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Karachi",
+    }),
     doseTime: "08:00",
     scheduledAt: new Date(Date.now() - 30 * 60_000).toISOString(),
     outcome: "unmarked",
