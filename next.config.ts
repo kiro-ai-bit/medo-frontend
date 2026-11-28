@@ -10,6 +10,9 @@ const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   register: false,
+  // Offline-first: a hard reload on reconnect aborts in-flight queue replay
+  // and strands Dexie write-queue entries (e2e golden path 7).
+  reloadOnOnline: false,
 });
 
 export default withSerwist(nextConfig);
