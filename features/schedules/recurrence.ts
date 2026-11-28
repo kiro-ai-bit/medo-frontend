@@ -43,9 +43,12 @@ export function describeRecurrence(input: RecurrenceInput): string {
     const days = (input.byDay ?? []).length
       ? ` on ${input.byDay!.join(", ")}`
       : "";
-    return `${every} week${days}`;
+    const weeks = interval === 1 ? "week" : "weeks";
+    return `${every} ${weeks}${days}`;
   }
-  return `${every} ${input.kind}`;
+  const unit = input.kind === "monthly" ? "month" : "year";
+  const noun = interval === 1 ? unit : `${unit}s`;
+  return interval === 1 ? `Every ${noun}` : `${every} ${noun}`;
 }
 
 /** Default schedule timezone = browser IANA tz. */

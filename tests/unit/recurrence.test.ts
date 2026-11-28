@@ -50,6 +50,23 @@ describe("describeRecurrence", () => {
       describeRecurrence({ kind: "weekly", interval: 1, byDay: ["MO", "FR"] }),
     ).toBe("Every week on MO, FR");
   });
+  it("previews plural intervals with correct units", () => {
+    expect(describeRecurrence({ kind: "weekly", interval: 2 })).toBe(
+      "Every 2 weeks",
+    );
+    expect(describeRecurrence({ kind: "monthly", interval: 1 })).toBe(
+      "Every month",
+    );
+    expect(describeRecurrence({ kind: "monthly", interval: 3 })).toBe(
+      "Every 3 months",
+    );
+    expect(describeRecurrence({ kind: "yearly", interval: 1 })).toBe(
+      "Every year",
+    );
+    expect(describeRecurrence({ kind: "yearly", interval: 2 })).toBe(
+      "Every 2 years",
+    );
+  });
   it("previews once count", () => {
     expect(describeRecurrence({ kind: "once", dates: ["2026-12-01"] })).toBe(
       "Once on 1 selected date",
