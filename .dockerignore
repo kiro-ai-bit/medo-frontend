@@ -1,0 +1,14 @@
+.git
+node_modules
+.env
+.env.*
+!.env.example
+.vercel
+coverage
+*.log
+Dockerfile
+.dockerignore
+tests
+.next/
+out/
+.turbo/
