@@ -26,7 +26,7 @@ export function PatientSwitcher() {
     return (
       <SectionState
         status="empty"
-        emptyMessage="No linked patients yet — accept a care invite to get started."
+        emptyMessage="No linked patients yet — open the invite link from your email to accept."
       >
         {null}
       </SectionState>
